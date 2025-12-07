@@ -3,19 +3,29 @@ package main
 import (
 	"fmt"
 	"net"
+	"os/user"
+	"sync"
 )
 
 // 设置服务端口
 type Server struct {
 	Ip   string
 	Port int
+
+	//
+	OnlineMap map[string]*user
+	mapLock   sync.RWMutex
+
+	Message chan string
 }
 
 // 返回新连接
 func NewServer(ip string, port int) *Server {
 	server := &Server{
-		Ip:   ip,
-		Port: port,
+		Ip:        ip,
+		Port:      port,
+		OnlineMap: make(map[string]*user),
+		Message:   make(chan string),
 	}
 	return server
 }
@@ -42,5 +52,18 @@ func (s *Server) Start() {
 
 // 进行事物处理
 func (s *Server) Handler(con net.Conn) {
-	fmt.Println("建立链接")
+	//fmt.Println("建立链接")
+	user := NewServer(conn)
+	//用户上线
+	s.mapLock.Lock()
+	s.OnlineMap[user] = user
+	s.mapLock.Unlock()
+
+	//广播当前上线消息
+}
+
+func (s *Server) BoradCast(user *User, msg string) {
+	sendMsg := "[" + user.Adder + "]" + user.Name + ":" + msg
+
+	s.Message <- sendMsg
 }
