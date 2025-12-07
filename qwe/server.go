@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"os/user"
 	"sync"
 )
 
@@ -13,7 +12,7 @@ type Server struct {
 	Port int
 
 	//
-	OnlineMap map[string]*user
+	OnlineMap map[string]*User
 	mapLock   sync.RWMutex
 
 	Message chan string
@@ -24,7 +23,7 @@ func NewServer(ip string, port int) *Server {
 	server := &Server{
 		Ip:        ip,
 		Port:      port,
-		OnlineMap: make(map[string]*user),
+		OnlineMap: make(map[string]*User),
 		Message:   make(chan string),
 	}
 	return server
@@ -53,13 +52,14 @@ func (s *Server) Start() {
 // 进行事物处理
 func (s *Server) Handler(con net.Conn) {
 	//fmt.Println("建立链接")
-	user := NewServer(conn)
+	user := NewUser(con)
 	//用户上线
 	s.mapLock.Lock()
-	s.OnlineMap[user] = user
+	s.OnlineMap[user.Name] = user
 	s.mapLock.Unlock()
 
 	//广播当前上线消息
+	s.BoradCast(user, "已上线")
 }
 
 func (s *Server) BoradCast(user *User, msg string) {
