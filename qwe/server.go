@@ -39,6 +39,8 @@ func (s *Server) Start() {
 	}
 	defer listener.Close()
 
+	go s.listenMessage()
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -66,4 +68,17 @@ func (s *Server) BoradCast(user *User, msg string) {
 	sendMsg := "[" + user.Adder + "]" + user.Name + ":" + msg
 
 	s.Message <- sendMsg
+
+}
+
+func (s *Server) listenMessage() {
+	for {
+		msg := <-s.Message
+
+		s.mapLock.Lock()
+		for _, cli := range s.OnlineMap {
+			cli.C <- msg
+		}
+		s.mapLock.Unlock()
+	}
 }
